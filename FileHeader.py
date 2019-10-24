@@ -262,6 +262,13 @@ def get_file_name_without_extension(file_name):
     return '.'.join(file_name.split('.')[:-1]) or file_name
 
 
+def get_folder_file_name(path):
+    '''
+    Returns the folder name, given a full folder path
+    '''
+    return '.../' + os.path.basename(os.path.split(path)[0]) + '/' + os.path.split(path)[1]
+
+
 def get_time(path):
     c_time = m_time = None
     try:
@@ -312,13 +319,15 @@ def get_args(syntax_type, options={}):
     file_path = get_file_path(options.get('path', None))
     file_name = get_file_name(options.get('path', None))
     file_name_without_extension = get_file_name_without_extension(file_name)
+    folder_file_name = get_folder_file_name(file_path)
 
     args.update({
         'create_time': c_time.strftime(format),
         'last_modified_time': m_time.strftime(format),
         'file_name': file_name,
         'file_name_without_extension': file_name_without_extension,
-        'file_path': file_path
+        'file_path': file_path,
+        'folder_file_name': folder_file_name
     })
 
     if IS_ST3:
@@ -706,6 +715,7 @@ LAST_MODIFIED_TIME = 'LAST_MODIFIED_TIME'
 FILE_NAME = 'FILE_NAME'
 FILE_NAME_WITHOUT_EXTENSION = 'FILE_NAME_WITHOUT_EXTENSION'
 FILE_PATH = 'FILE_PATH'
+FOLDER_FILE_NAME = 'FOLDER_FILE_NAME'
 
 
 class FileHeaderListener(sublime_plugin.EventListener):
@@ -715,6 +725,7 @@ class FileHeaderListener(sublime_plugin.EventListener):
     FILE_NAME_WITHOUT_EXTENSION_REGEX = re.compile(
         '\{\{\s*file_name_without_extension\s*\}\}')
     FILE_PATH_REGEX = re.compile('\{\{\s*file_path\s*\}\}')
+    FOLDER_FILE_NAME_REGEX = re.compile('\{\{\s*folder_file_name\s*\}\}')
 
     new_view_id = []
 
@@ -760,6 +771,8 @@ class FileHeaderListener(sublime_plugin.EventListener):
                     strings = get_file_name_without_extension(file_name)
                 elif what == FILE_PATH:
                     strings = get_file_path(view.file_name())
+                elif what == FOLDER_FILE_NAME:
+                    strings = get_folder_file_name(view.file_name())
 
                 strings = '{0}{1}{2}'.format(
                     ' ' * (index - space_start), strings, line_tail)
@@ -825,6 +838,7 @@ class FileHeaderListener(sublime_plugin.EventListener):
     def on_activated(self, view):
         block(view, self.update_automatically, view, FILE_PATH)
         block(view, self.update_automatically, view, FILE_NAME)
+        block(view, self.update_automatically, view, FOLDER_FILE_NAME)
         block(view, self.update_automatically,
               view, FILE_NAME_WITHOUT_EXTENSION)
 
